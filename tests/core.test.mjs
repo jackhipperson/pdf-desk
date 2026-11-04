@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { History, parseRange, pageDimensions, movePages, insertAt, safeFilename, MAX_BYTES } from '../public/core.mjs';
+const pages = () => ['a', 'b', 'c', 'd', 'e'].map((id, index) => ({ id, index, sourceId: 'source', width: 595, height: 842, rotation: 0 }));
+
+test('range selection deduplicates, sorts and accepts en-dashes', () => assert.deepEqual(parseRange('4, 1–3, 2', 5), [0, 1, 2, 3]));
+for (const value of ['', '0', '6', '3-1', '1,,3', '1.5', '-1', '1-99', 'x', '1-']) test(`range rejects ${JSON.stringify(value)}`, () => assert.throws(() => parseRange(value, 5)));
+test('moving a noncontiguous selection preserves document order', () => assert.deepEqual(movePages(pages(), ['d', 'b'], 'a').map(p => p.id), ['b', 'd', 'a', 'c', 'e']));
+test('move after and move to end use remaining-page coordinates', () => { assert.deepEqual(movePages(pages(), ['a', 'c'], 'd', true).map(p => p.id), ['b', 'd', 'a', 'c', 'e']); assert.deepEqual(movePages(pages(), ['a'], 'end').map(p => p.id), ['b', 'c', 'd', 'e', 'a']); });
+test('moving onto the selection is rejected', () => assert.throws(() => movePages(pages(), ['a', 'b'], 'b')));
+test('insertion positions are relative to active page', () => { const incoming = [{ id: 'x' }]; assert.deepEqual(insertAt(pages(), incoming, 'before', 'c').map(p => p.id), ['a', 'b', 'x', 'c', 'd', 'e']); assert.deepEqual(insertAt(pages(), incoming, 'after', 'c').map(p => p.id), ['a', 'b', 'c', 'x', 'd', 'e']); });
+test('dimensions support Letter, landscape, match and no-selection fallback', () => { assert.deepEqual(pageDimensions('letter', 'landscape'), [792, 612]); assert.deepEqual(pageDimensions('match', 'portrait', { width: 200, height: 100 }), [100, 200]); assert.deepEqual(pageDimensions('match', 'portrait'), [595.28, 841.89]); });
+test('undo restores state, redo restores edit, branch edits clear redo', () => { const h = new History(); h.commit(pages(), ['b'], 'b'); h.commit(pages().filter(p => p.id !== 'b'), ['c'], 'c'); assert(h.undo()); assert.equal(h.pages.length, 5); assert.deepEqual([...h.selected], ['b']); assert(h.redo()); assert.equal(h.pages.length, 4); h.undo(); h.commit(pages().slice(0, 2), ['a'], 'a'); assert.equal(h.future.length, 0); });
+test('dirty flag follows exported content across undo and redo', () => { const h = new History(); h.commit(pages()); assert(h.dirty); h.markSaved(); assert(!h.dirty); h.commit(pages().slice(0, 2)); assert(h.dirty); h.undo(); assert(!h.dirty); h.redo(); assert(h.dirty); });
+test('selection uses a stable Shift-click anchor', () => { const h = new History(); h.commit(pages(), ['b'], 'b'); h.select('d', { range: true }); assert.deepEqual([...h.selected], ['b', 'c', 'd']); h.select('e', { range: true }); assert.deepEqual([...h.selected], ['b', 'c', 'd', 'e']); h.select('c', { toggle: true }); assert(!h.selected.has('c')); });
+test('sources retained by undo survive deletion and redo', () => { const h = new History(); h.commit(pages()); h.commit([]); assert(h.retainedSources().has('source')); h.undo(); assert(h.retainedSources().has('source')); h.reset(); assert.equal(h.retainedSources().size, 0); });
+test('export names strip unsafe characters and enforce a PDF suffix', () => { assert.equal(safeFilename(' report: final.pdf '), 'report- final.pdf'); assert.equal(safeFilename('My document'), 'My document.pdf'); assert.equal(safeFilename('Report..pdf'), 'Report.pdf'); for (const name of ['', '...', 'CON', 'LPT1.pdf', 'CON.backup.pdf']) assert.throws(() => safeFilename(name)); });
+test('file budget is 100 decimal megabytes', () => assert.equal(MAX_BYTES, 100_000_000));

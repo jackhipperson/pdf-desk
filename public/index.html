@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Arrange PDF pages on your computer. Merge, reorder, insert and save a copy, entirely offline.">
+  <title>PDF Desk</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./app.css">
+  <script defer src="./vendor/lucide.min.js"></script>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="app-header">
+      <div class="brand"><span class="brand-mark"><i data-lucide="files" aria-hidden="true"></i></span>PDF Desk</div>
+      <span class="privacy"><i data-lucide="shield-check" aria-hidden="true"></i>Only on your computer</span>
+      <button id="new-document" class="quiet"><i data-lucide="file" aria-hidden="true"></i>New</button>
+      <button id="help" class="quiet icon-only" aria-label="Help and keyboard shortcuts"><i data-lucide="circle-help" aria-hidden="true"></i></button>
+    </header>
+    <section class="document-bar" aria-label="Document">
+      <div class="document-info"><label class="sr-only" for="document-title">Document name</label><input id="document-title" class="document-title" value="Untitled document" maxlength="160"><div id="document-meta" class="secondary">No files added · Up to 100 MB combined</div></div>
+      <div class="actions"><button id="add-files"><i data-lucide="plus" aria-hidden="true"></i>Add files</button><button id="save-copy" class="primary" disabled><i data-lucide="download" aria-hidden="true"></i>Save a copy</button></div>
+    </section>
+    <nav class="edit-bar" aria-label="Page tools">
+      <button id="undo" class="quiet icon-only" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)" disabled><i data-lucide="undo-2" aria-hidden="true"></i></button>
+      <button id="redo" class="quiet icon-only" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)" disabled><i data-lucide="redo-2" aria-hidden="true"></i></button>
+      <span class="divider"></span>
+      <button id="rotate" class="quiet page-action" disabled><i data-lucide="rotate-cw" aria-hidden="true"></i>Rotate</button>
+      <button id="duplicate" class="quiet page-action" disabled><i data-lucide="copy" aria-hidden="true"></i>Duplicate</button>
+      <button id="move" class="quiet page-action" disabled><i data-lucide="arrow-up-down" aria-hidden="true"></i>Move</button>
+      <button id="insert" class="quiet"><i data-lucide="file-plus-2" aria-hidden="true"></i>Insert</button>
+      <button id="delete" class="quiet page-action" disabled><i data-lucide="trash-2" aria-hidden="true"></i>Delete</button>
+      <span id="selection-count" class="selection-count">0 selected</span>
+    </nav>
+    <div id="messages" class="messages" hidden><div id="message-content" role="alert"></div><button id="dismiss-message" class="quiet icon-only" aria-label="Dismiss message"><i data-lucide="x" aria-hidden="true"></i></button></div>
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Pages">
+        <div class="sidebar-heading"><strong>Pages</strong><button id="select-all" class="quiet small" disabled>Select all</button></div>
+        <form id="range-form"><label class="sr-only" for="page-range">Select page numbers or ranges</label><input id="page-range" placeholder="Select pages: 1–3, 5" autocomplete="off"><button class="quiet icon-only" aria-label="Select page range"><i data-lucide="arrow-right" aria-hidden="true"></i></button></form>
+        <div id="page-list" class="page-list" aria-label="Document pages"></div>
+        <div id="sidebar-empty" class="sidebar-empty">Your pages will appear here.</div>
+      </aside>
+      <main class="preview">
+        <div id="preview-toolbar" class="preview-toolbar" hidden>
+          <div class="page-navigation"><button id="previous" class="quiet icon-only" aria-label="Previous page"><i data-lucide="chevron-left" aria-hidden="true"></i></button><label class="sr-only" for="page-number">Go to page</label><input id="page-number" type="number" min="1" value="1"><span id="page-total">of 0</span><button id="next" class="quiet icon-only" aria-label="Next page"><i data-lucide="chevron-right" aria-hidden="true"></i></button></div>
+          <div class="zoom-controls"><button id="zoom-out" class="quiet icon-only" aria-label="Zoom out"><i data-lucide="minus" aria-hidden="true"></i></button><span id="zoom-value">100%</span><button id="zoom-in" class="quiet icon-only" aria-label="Zoom in"><i data-lucide="plus" aria-hidden="true"></i></button><label class="sr-only" for="fit-mode">Preview size</label><select id="fit-mode"><option value="page">Fit page</option><option value="width">Fit width</option><option value="custom">Custom zoom</option></select></div>
+        </div>
+        <div id="preview-scroll" class="preview-scroll">
+          <div id="empty-state" class="empty-state"><div class="empty-paper"><i data-lucide="files" aria-hidden="true"></i></div><h1>Your next document<br>starts here.</h1><p>Add PDFs or images, then arrange<br>the pages your way.</p><button id="empty-add" class="primary"><i data-lucide="plus" aria-hidden="true"></i>Add files</button><span class="secondary">Or drop files here · PDF, JPG, PNG · 100 MB combined</span></div>
+          <div id="canvas-stage" class="canvas-stage" hidden aria-busy="false"></div>
+        </div>
+        <div id="page-details" class="page-details"></div>
+      </main>
+    </div>
+    <footer class="status-bar"><span id="status" role="status" aria-live="polite"><span class="status-dot"></span>Ready · Originals stay untouched</span><span class="selection-hint">Drag to reorder · Ctrl / Shift to select</span></footer>
+    <div id="drop-overlay" class="drop-overlay" hidden><i data-lucide="files" aria-hidden="true"></i><strong>Drop PDFs or images to add pages</strong><span>Up to 100 MB combined</span></div>
+    <input id="file-input" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" multiple hidden>
+    <dialog id="dialog"><form id="dialog-form" method="dialog"><div id="dialog-body"></div><div id="dialog-error" class="dialog-error" role="alert" hidden></div><footer><button id="dialog-cancel" type="button">Cancel</button><button id="dialog-confirm" type="submit" class="primary">Continue</button></footer></form></dialog>
+  </div>
+  <noscript>PDF Desk needs JavaScript enabled to arrange and save PDF pages.</noscript>
+</body>
+</html>

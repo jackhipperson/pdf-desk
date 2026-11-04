@@ -1,0 +1,20 @@
+import { mkdir, copyFile, cp, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const bundled = process.env.PDF_DESK_DEPENDENCIES;
+const require = createRequire(import.meta.url);
+function packageRoot(name) { return bundled ? resolve(bundled, name) : dirname(require.resolve(`${name}/package.json`)); }
+const vendor = resolve(project, 'public/vendor');
+await mkdir(vendor, { recursive: true });
+await mkdir(resolve(project, 'docs/licenses'), { recursive: true });
+const pdfLib = packageRoot('pdf-lib'), pdfJs = packageRoot('pdfjs-dist'), lucide = packageRoot('lucide');
+await copyFile(resolve(pdfLib, 'dist/pdf-lib.esm.min.js'), resolve(vendor, 'pdf-lib.mjs'));
+await copyFile(resolve(pdfJs, 'build/pdf.mjs'), resolve(vendor, 'pdf.mjs'));
+await copyFile(resolve(pdfJs, 'build/pdf.worker.mjs'), resolve(vendor, 'pdf.worker.mjs'));
+for (const folder of ['cmaps', 'standard_fonts', 'wasm', 'iccs']) await cp(resolve(pdfJs, folder), resolve(vendor, folder), { recursive: true });
+await copyFile(resolve(lucide, 'dist/umd/lucide.min.js'), resolve(vendor, 'lucide.min.js'));
+for (const [name, path, licence] of [['pdf-lib', pdfLib, 'LICENSE.md'], ['pdfjs-dist', pdfJs, 'LICENSE'], ['lucide', lucide, 'LICENSE']]) await copyFile(resolve(path, licence), resolve(project, `docs/licenses/${name}.txt`));
+await writeFile(resolve(project, 'docs/THIRD-PARTY.md'), '# Bundled dependencies\n\n- pdf-lib 1.17.1 — MIT, https://pdf-lib.js.org/\n- PDF.js (pdfjs-dist) 5.6.205 — Apache-2.0, https://mozilla.github.io/pdf.js/\n- Lucide 1.8.0 — ISC, https://lucide.dev/\n\nCopies of upstream licence notices are in `docs/licenses/`. PDF.js font assets include their original licence notices. Dependencies are bundled for offline use. Run `npm run vendor` after installing the pinned package versions to reproduce these assets.\n');
+console.log('Offline assets copied.');
