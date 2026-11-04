@@ -120,6 +120,6 @@ Read the [portfolio case study](docs/PORTFOLIO.md) for the scope, design decisio
 
 ## Release and licence
 
-Version **1.0.0** is released under the [MIT licence](LICENSE). See [CHANGELOG.md](CHANGELOG.md) for the release notes. Upstream dependencies retain their own licences, preserved in [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md) and `docs/licenses/`.
+Version **1.0.1** is released under the [MIT licence](LICENSE). See [CHANGELOG.md](CHANGELOG.md) for the release notes. Upstream dependencies retain their own licences, preserved in [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md) and `docs/licenses/`.
 
 GitHub: [jackhipperson/pdf-desk](https://github.com/jackhipperson/pdf-desk). Download the packaged app from [Releases](https://github.com/jackhipperson/pdf-desk/releases).

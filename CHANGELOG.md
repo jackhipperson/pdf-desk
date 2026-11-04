@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 — 2026-11-04
+
+- Preserve spaces in the welcome heading and supporting sentence when line breaks are hidden in narrow windows.
+
 ## 1.0.0 — 2026-11-04
 
 First accepted release of PDF Desk. User acceptance testing of a real PDF workflow is complete.

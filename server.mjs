@@ -16,7 +16,7 @@ export function createAppServer() {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
     if (req.headers.host !== address && req.headers.host !== `localhost:${req.socket.localPort}`) { res.writeHead(403).end('Local access only.'); return; }
     if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }).end(); return; }
-    if (req.url === '/__pdf-desk') { res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ app: 'pdf-desk', version: '1.0.0' })); return; }
+    if (req.url === '/__pdf-desk') { res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ app: 'pdf-desk', version: '1.0.1' })); return; }
     let file;
     try {
       const path = decodeURIComponent(new URL(req.url, `http://${address}`).pathname);
